@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eeco Booking - Admin Panel</title>
+
+<!-- Firebase SDK Scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+}
+
+/* 🔐 एडमिन लॉगिन स्क्रीन स्टाइल */
+.admin-login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1a202c;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.login-box {
+    background: white;
+    padding: 35px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.login-box h2 {
+    margin-top: 0;
+    color: #1a202c;
+    border: none;
+    padding: 0;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* 🔔 नोटिफिकेशन बेल और हेडर */
+header {
+    background: #1a202c;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    position: relative;
+}
+
+.bell-container {
+    position: absolute;
+    top: 25px;
+    right: 30px;
+    cursor: pointer;
+}
+
+.bell-icon {
+    font-size: 28px;
+    position: relative;
+    user-select: none;
+}
+
+.bell-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 3px 7px;
+    font-size: 12px;
+    font-weight: bold;
+    display: none;
+}
+
+/* घंटी हिलने का एनीमेशन */
+@keyframes ring {
+    0% { transform: rotate(0); }
+    10% { transform: rotate(15deg); }
+    20% { transform: rotate(-15deg); }
+    30% { transform: rotate(10deg); }
+    40% { transform: rotate(-10deg); }
+    50% { transform: rotate(5deg); }
+    60% { transform: rotate(-5deg); }
+    100% { transform: rotate(0); }
+}
+
+.ring-active {
+    animation: ring 0.8s ease-in-out infinite;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 20px auto;
+    padding: 10px;
+}
+
+h2 {
+    color: #1a202c;
+    border-left: 5px solid #007bff;
+    padding-left: 10px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+/* टैब सिस्टम */
+.tab-bar {
+    display: flex;
+    background: white;
+    padding: 5px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    font-size: 16px;
+    font-weight: bold;
+    color: #4a5568;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.tab-btn.active {
+    background: #007bff;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ड्राइवर्स ग्रिड और कार्ड */
+.driver-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.driver-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e1e4e8;
+    display: flex;
+    flex-direction: column;
+}
+
+.car-photo-container {
+    height: 180px;
+    background: #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.car-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.car-photo:hover {
+    transform: scale(1.05);
+}
+
+.driver-info {
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.driver-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a202c;
+    margin: 0 0 5px 0;
+}
+
+.driver-id-badge {
+    font-size: 12px;
+    background: #edf2f7;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: #4a5568;
+    font-weight: bold;
+}
+
+.info-item {
+    font-size: 14px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* पॉइंट्स बॉक्स */
+.points-box {
+    background: #fffdf5;
+    border: 1px solid #ffeb3b;
+    padding: 8px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.points-value {
+    color: #d69e2e;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.points-controls button {
+    background: #1a202c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+/* बुकिंग कार्ड */
+.booking-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-left: 5px solid #007bff;
+}
+
+.booking-card.completed {
+    border-left-color: #28a745;
+}
+
+.booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+/* ड्राइवर अलॉटमेंट बॉक्स स्टाइल */
+.assign-driver-box {
+    background: #f7fafc;
+    border: 1px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.driver-select {
+    flex-grow: 1;
+    padding: 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e0;
+}
+
+.btn-assign {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-unassign {
+    background: #718096;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* बटन्स */
+.card-actions {
+    display: flex;
+    border-top: 1px solid #e1e4e8;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.btn-approve { background: #28a745; color: white; }
+.btn-reject { background: #dc3545; color: white; }
+.btn-delete { background: #ffc107; color: #333; }
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 1. एडमिन लॉगिन ओवरले -->
+<div id="admin-login-screen" class="admin-login-overlay">
+    <div class="login-box">
+        <span style="font-size: 50px;">🔐</span>
+        <h2>Admin Security</h2>
+        <p style="color: #666; font-size: 14px; margin-bottom: 15px;">पैनल खोलने के लिए क्रेडेंशियल दर्ज करें</p>
+        <input type="text" id="admin-user" placeholder="यूज़रनेम दर्ज करें">
+        <input type="password" id="admin-pass" placeholder="पासवर्ड दर्ज करें">
+        <button onclick="checkAdminLogin()">लॉगइन करें</button>
+    </div>
+</div>
+
+<!-- ⚙️ 2. मुख्य एडमिन पैनल -->
+<div id="admin-main-panel" style="display: none;">
+    <header>
+        <!-- 🔔 नोटिफिकेशन घंटी -->
+        <div class="bell-container" onclick="resetBellNotification()" title="नई रिक्वेस्ट की जानकारी">
+            <span id="bell-btn" class="bell-icon">🔔<span id="bell-count" class="bell-badge">0</span></span>
+        </div>
+        
+        <h1>⚙️ Eeco Booking - Admin Control Panel</h1>
+        <p>ड्राइवर्स मैनेजमेंट, बुकिंग्स कंट्रोल, गाड़ी की फोटो और पॉइंट सिस्टम</p>
+    </header>
+
+    <div class="container">
+        <!-- लॉगआउट बटन -->
+        <div style="text-align: right; margin-bottom: 15px;">
+            <button onclick="adminLogout()" style="background:#4a5568; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">🚪 लॉगआउट</button>
+        </div>
+
+        <!-- टैब बार -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('drivers-tab', this)">🚖 ड्राइवर्स मैनेजमेंट</button>
+            <button class="tab-btn" onclick="switchTab('bookings-tab', this)">📅 बुकिंग लिस्ट</button>
+        </div>
+
+        <!-- टैब 1: ड्राइवर्स -->
+        <div id="drivers-tab" class="tab-content active">
+            <h2>⏳ नए ड्राइवर्स रिक्वेस्ट (Pending)</h2>
+            <div id="pending-drivers-list" class="driver-grid">
+                <p style="color: #666;">लोड हो रहा है...</p>
+            </div>
+
+            <h2 style="border-left-color: #28a745;">✅ एक्टिव ड्राइवर्स (Approved)</h2>
+            <div id="approved-drivers-list" class="driver-grid">
+                <p style="color: #666;">लोड हो रहा है...</p>
+            </div>
+        </div>
+
+        <!-- टैब 2: बुकिंग लिस्ट -->
+        <div id="bookings-tab" class="tab-content">
+            <h2>📋 सभी ग्राहकों की बुकिंग लिस्ट</h2>
+            <div id="all-bookings-list">
+                <p style="color: #666;">कोई बुकिंग नहीं है...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Firebase कॉन्फ़िगरेशन[span_2](start_span)[span_2](end_span)
+const firebaseConfig = {
+    databaseURL: "https://mp-mh-eeco-booking-8dafc-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// सुरक्षित क्रेडेंशियल[span_3](start_span)[span_3](end_span)
+const ADMIN_USERNAME = "admin";    
+const ADMIN_PASSWORD = "admin123"; 
+
+// एक्टिव ड्राइवर्स का ग्लोबल एरे (बुकिंग पेज पर ड्रॉपडाउन बनाने के लिए)
+let approvedDriversArray = [];
+
+function checkAdminLogin() {
+    const user = document.getElementById('admin-user').value.trim();
+    const pass = document.getElementById('admin-pass').value.trim();
+
+    if (user === ADMIN_USERNAME && pass === ADMIN_PASSWORD) {
+        document.getElementById('admin-login-screen').style.display = 'none';
+        document.getElementById('admin-main-panel').style.display = 'block';
+        
+        loadDrivers();
+        loadBookings();
+    } else {
+        alert("❌ गलत यूज़रनेम या पासवर्ड! कृपया दोबारा जांचें।");
+    }
+}
+
+function adminLogout() {
+    document.getElementById('admin-user').value = '';
+    document.getElementById('admin-pass').value = '';
+    document.getElementById('admin-main-panel').style.display = 'none';
+    document.getElementById('admin-login-screen').style.display = 'flex';
+}
+
+function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    btnElement.classList.add('active');
+}
+
+// 🔔 नोटिफिकेशन घंटी[span_4](start_span)[span_4](end_span)
+let lastPendingCount = 0;
+const notificationSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-120.wav");
+
+function handleNotification(pendingCount) {
+    const bellBadge = document.getElementById('bell-count');
+    const bellBtn = document.getElementById('bell-btn');
+
+    if (pendingCount > 0) {
+        bellBadge.textContent = pendingCount;
+        bellBadge.style.display = 'block';
+        bellBtn.classList.add('ring-active'); 
+
+        if (pendingCount > lastPendingCount) {
+            notificationSound.play().catch(e => console.log("Sound play error:", e));
+        }
+    } else {
+        bellBadge.style.display = 'none';
+        bellBtn.classList.remove('ring-active');
+    }
+    lastPendingCount = pendingCount;
+}
+
+function resetBellNotification() {
+    const bellBadge = document.getElementById('bell-count');
+    const bellBtn = document.getElementById('bell-btn');
+    bellBadge.style.display = 'none';
+    bellBtn.classList.remove('ring-active');
+    alert(`📢 आपके पास वर्तमान में ${lastPendingCount} पेंडिंग ड्राइवर रिक्वेस्ट हैं।`);
+}
+
+// 1. ड्राइवर्स लोड करना
+function loadDrivers() {
+    const pendingContainer = document.getElementById('pending-drivers-list');
+    const approvedContainer = document.getElementById('approved-drivers-list');
+
+    database.ref('drivers').on('value', (snapshot) => {
+        pendingContainer.innerHTML = '';
+        approvedContainer.innerHTML = '';
+        const data = snapshot.val();
+
+        let pendingCount = 0;
+        let approvedCount = 0;
+        approvedDriversArray = []; // पुराना डेटा खाली करें
+
+        if (data) {
+            Object.keys(data).forEach((id) => {
+                const driver = data[id];
+                const carPhoto = driver.photo || "https://img.icons8.com/color/96/car--v1.png";
+                const points = driver.points !== undefined ? driver.points : 100;
+
+                // एक्टिव (Approved) ड्राइवर्स को एरे में डालें ताकि बुकिंग्स में दिख सकें
+                if (driver.status === 'approved') {
+                    approvedDriversArray.push({
+                        id: id,
+                        name: driver.name,
+                        vehicle: driver.vehicle,
+                        phone: driver.phone
+                    });
+                }
+
+                const cardHtml = `
+                    <div class="driver-card">
+                        <div class="car-photo-container">
+                            <img class="car-photo" src="${carPhoto}" onerror="this.src='https://img.icons8.com/color/96/car--v1.png'" alt="Car Photo">
+                        </div>
+                        <div class="driver-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <h3 class="driver-name">👤 ${driver.name}</h3>
+                                <span class="driver-id-badge">ID: ${id}</span>
+                            </div>
+                            <div class="info-item">📞 <b>नंबर:</b> <span>${driver.phone}</span></div>
+                            <div class="info-item">🚗 <b>गाड़ी नंबर:</b> <span>${driver.vehicle}</span></div>
+                            <div class="info-item">🔑 <b>पासवर्ड:</b> <span>${driver.password}</span></div>
+                            
+                            <div class="points-box">
+                                <span>⭐ पॉइंट्स:</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="points-value" id="points-val-${id}">${points}</span>
+                                    <div class="points-controls">
+                                        <button onclick="changePoints('${id}', ${points}, -10)">-10</button>
+                                        <button onclick="changePoints('${id}', ${points}, 10)">+10</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            ${driver.status === 'pending' ? `
+                                <button class="action-btn btn-approve" onclick="updateStatus('${id}', 'approved')">मंजूर करें ✅</button>
+                                <button class="action-btn btn-reject" onclick="deleteDriver('${id}')">रद्द करें ❌</button>
+                            ` : `
+                                <button class="action-btn btn-delete" onclick="updateStatus('${id}', 'pending')">होल्ड पर डालें ⏳</button>
+                                <button class="action-btn btn-reject" onclick="deleteDriver('${id}')">हटाएं 🗑️</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+
+                if (driver.status === 'pending') {
+                    pendingContainer.innerHTML += cardHtml;
+                    pendingCount++;
+                } else {
+                    approvedContainer.innerHTML += cardHtml;
+                    approvedCount++;
+                }
+            });
+        }
+
+        handleNotification(pendingCount);
+
+        if (pendingCount === 0) {
+            pendingContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #718096; padding: 20px; background: white; border-radius: 8px;">🎉 कोई पेंडिंग ड्राइवर रिक्वेस्ट नहीं है!</p>';
+        }
+        if (approvedCount === 0) {
+            approvedContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #718096; padding: 20px; background: white; border-radius: 8px;">🚖 कोई अप्रूव्ड ड्राइवर नहीं है।</p>';
+        }
+    });
+}
+
+// 2. बुकिंग लिस्ट लोड करना
+function loadBookings() {
+    const bookingsContainer = document.getElementById('all-bookings-list');
+
+    database.ref('bookings').on('value', (snapshot) => {
+        bookingsContainer.innerHTML = '';
+        const data = snapshot.val();
+
+        if (data) {
+            Object.keys(data).reverse().forEach((key) => {
+                const booking = data[key];
+                const isCompleted = booking.status === 'completed';
+
+                // वर्तमान बुकिंग के लिए एक्टिव ड्राइवर्स की ड्रॉपडाउन लिस्ट तैयार करना
+                let driverOptions = `<option value="">-- ड्राइवर चुनें --</option>`;
+                approvedDriversArray.forEach(drv => {
+                    const isSelected = (booking.driverId === drv.id) ? 'selected' : '';
+                    driverOptions += `<option value="${drv.id}" ${isSelected}>${drv.name} (${drv.vehicle})</option>`;
+                });
+
+                const cardHtml = `
+                    <div class="booking-card ${isCompleted ? 'completed' : ''}">
+                        <div class="booking-header">
+                            <span style="font-size: 18px; font-weight: bold; color: #1a202c;">👤 ${booking.name}</span>
+                            <span style="font-weight: bold; color: ${isCompleted ? '#28a745' : '#ffc107'}">
+                                ${isCompleted ? '✅ यात्रा पूरी हुई' : '⏳ यात्रा अधूरी (Pending)'}
+                            </span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 15px; margin-bottom: 12px;">
+                            <div>📍 <b>कहाँ से:</b> ${booking.from_location}</div>
+                            <div>🎯 <b>कहाँ तक:</b> ${booking.to_location}</div>
+                            <div>📅 <b>तारीख:</b> ${booking.travel_date}</div>
+                            <div>💺 <b>बुक सीटें:</b> ${booking.seats} seat</div>
+                            <div>💵 <b>किराया:</b> ₹${booking.fare}</div>
+                            <div>📞 <b>फ़ोन नंबर:</b> <a href="tel:${booking.phone}">${booking.phone}</a></div>
+                            <div style="grid-column: 1/-1; color:#555;">🚖 <b>अलॉट किया गया ड्राइवर ID:</b> <span style="color:#007bff; font-weight:bold;">${booking.driverId || 'कोई नहीं'}</span></div>
+                        </div>
+
+                        <!-- 🛠️ ड्राइवर अलॉटमेंट यूआई (नया फ़ीचर) -->
+                        <div class="assign-driver-box">
+                            <label style="font-weight: bold; font-size: 14px;">🚖 ड्राइवर अलॉट करें: </label>
+                            <select id="select-driver-${key}" class="driver-select">
+                                ${driverOptions}
+                            </select>
+                            <button class="btn-assign" onclick="allotDriverToBooking('${key}')">अलॉट करें ✅</button>
+                            ${booking.driverId ? `<button class="btn-unassign" onclick="removeDriverFromBooking('${key}')">हटाएं ❌</button>` : ''}
+                        </div>
+
+                        <div style="text-align: right; margin-top: 15px;">
+                            <button class="btn-danger" onclick="deleteBooking('${key}')">🗑️ बुकिंग डिलीट करें</button>
+                        </div>
+                    </div>
+                `;
+                bookingsContainer.innerHTML += cardHtml;
+            });
+        } else {
+            bookingsContainer.innerHTML = '<p style="text-align: center; color: #718096; padding: 20px; background: white; border-radius: 8px;">📊 अभी तक कोई बुकिंग दर्ज नहीं हुई है।</p>';
+        }
+    });
+}
+
+// 🚖 फंक्शन: बुकिंग को ड्राइवर अलॉट करना (नया फ़ंक्शन)
+function allotDriverToBooking(bookingId) {
+    const selectElement = document.getElementById(`select-driver-${bookingId}`);
+    const selectedDriverId = selectElement.value;
+
+    if (!selectedDriverId) {
+        alert("⚠️ कृपया ड्रॉपडाउन में से किसी एक एक्टिव ड्राइवर को चुनें!");
+        return;
+    }
+
+    database.ref('bookings/' + bookingId).update({
+        driverId: selectedDriverId
+    }).then(() => {
+        alert("✅ ड्राइवर सफलतापूर्वक अलॉट कर दिया गया है! अब ड्राइवर को यह बुकिंग उनके पैनल में दिखाई देगी।");
+    }).catch(error => {
+        alert("❌ एरर: " + error.message);
+    });
+}
+
+// 🚖 फंक्शन: बुकिंग से अलॉटेड ड्राइवर को हटाना (नया फ़ंक्शन)
+function removeDriverFromBooking(bookingId) {
+    if (confirm("क्या आप इस बुकिंग से अलॉटेड ड्राइवर को हटाना चाहते हैं?")) {
+        database.ref('bookings/' + bookingId).update({
+            driverId: null
+        }).then(() => {
+            alert("❌ ड्राइवर को बुकिंग से हटा दिया गया है।");
+        });
+    }
+}
+
+// ड्राइवर स्टेटस अपडेट
+function updateStatus(id, newStatus) {
+    database.ref('drivers/' + id).update({
+        status: newStatus
+    }).then(() => {
+        alert(`ड्राइवर स्टेटस सफलतापूर्वक अपडेट हुआ!`);
+    });
+}
+
+// ड्राइवर डिलीट करना
+function deleteDriver(id) {
+    if (confirm("क्या आप वाकई इस ड्राइवर को हटाना चाहते हैं?")) {
+        database.ref('drivers/' + id).remove().then(() => {
+            alert("ड्राइवर को डिलीट कर दिया गया है।");
+        });
+    }
+}
+
+// ड्राइवर्स पॉइंट्स कंट्रोल
+function changePoints(id, currentPoints, amount) {
+    const newPoints = currentPoints + amount;
+    if (newPoints < 0) {
+        alert("ड्राइवर के पॉइंट्स 0 से कम नहीं हो सकते!");
+        return;
+    }
+    database.ref('drivers/' + id).update({
+        points: newPoints
+    });
+}
+
+// बुकिंग डिलीट करना
+function deleteBooking(bookingId) {
+    if (confirm("क्या आप वाकई इस बुकिंग को हटाना चाहते हैं?")) {
+        database.ref('bookings/' + bookingId).remove().then(() => {
+            alert("बुकिंग सफलतापूर्वक डिलीट हो गई है!");
+        });
+    }
+}
+</script>
+</body>
+</html>

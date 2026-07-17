@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MP-MH Eeco Booking</title>
+
+<!-- Firebase SDK Scripts (डेटाबेस से कनेक्ट करने के लिए) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+}
+
+header {
+    background: #0d6efd;
+    color: white;
+    text-align: center;
+    padding: 30px 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+header p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+}
+
+.hero {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.hero h2 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.btn {
+    background: #28a745;
+    color: white;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 8px;
+    display: inline-block;
+    margin-top: 15px;
+    font-weight: bold;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+}
+
+.btn:hover {
+    background: #218838;
+}
+
+.booking {
+    max-width: 400px;
+    margin: 20px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.booking h2 {
+    margin-top: 0;
+    color: #0d6efd;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.booking input, .booking select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.booking input:focus, .booking select:focus {
+    border-color: #0d6efd;
+    outline: none;
+}
+
+.fare-box {
+    background: #e9ecef;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 18px;
+}
+
+.booking button {
+    width: 100%;
+    padding: 14px;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.2s;
+}
+
+.booking button:hover {
+    background: #0b5ed7;
+}
+
+footer {
+    background: #222;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 50px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🚐 MP-MH Eeco Booking</h1>
+    <p>MP से महाराष्ट्र जाने-आने की ऑनलाइन बुकिंग</p>
+</header>
+
+<section class="hero">
+    <h2>अपनी सीट अभी बुक करें</h2>
+    <p>सुरक्षित • तेज • भरोसेमंद यात्रा</p>
+    <a href="#booking-form" class="btn">बुक करने के लिए नीचे जाएं</a>
+</section>
+
+<div class="booking" id="booking-form">
+    <h2>बुकिंग फॉर्म</h2>
+    
+    <div class="form-group">
+        <label>यात्री का नाम</label>
+        <input type="text" id="cust-name" placeholder="पूरा नाम दर्ज करें">
+    </div>
+
+    <div class="form-group">
+        <label>मोबाइल नंबर</label>
+        <input type="tel" id="cust-phone" placeholder="10 अंकों का मोबाइल नंबर" maxlength="10">
+    </div>
+
+    <div class="form-group">
+        <label>कहाँ से (Boarding Point)</label>
+        <select id="from-location">
+            <option value="">स्थान चुनें</option>
+            <option>Sendhwa</option>
+            <option>Barwani</option>
+            <option>Chachriya</option>
+            <option>Dhanora</option>
+            <option>Kamod</option>
+            <option>Dhulkot</option>
+            <option>Julwaniya</option>
+            <option>Ballvadi</option>
+            <option>Nangalvadi</option>
+            <option>Varla</option>
+            <option>Nivali</option>
+            <option>Palsud</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>कहाँ जाना है (Destination)</label>
+        <select id="to-location">
+            <option value="">स्थान चुनें</option>
+            <option>Shirpur</option>
+            <option>Dhule</option>
+            <option>Jalgaon</option>
+            <option>Chalisgaon</option>
+            <option>Kannad</option>
+            <option>Aurangabad</option>
+            <option>Lasur</option>
+            <option>Gangapur</option>
+            <option>Vaijapur</option>
+            <option>Alephata</option>
+            <option>Yevla</option>
+            <option>Malegaon</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>यात्रा की तारीख</label>
+        <input type="date" id="travel-date">
+    </div>
+
+    <div class="form-group">
+        <label>सीटों की संख्या</label>
+        <input type="number" id="seats-count" value="1" min="1" max="10">
+    </div>
+
+    <div class="fare-box">
+        <b>कुल किराया: ₹<span id="fare">0</span></b>
+    </div>
+
+    <button onclick="sendBooking()">बुकिंग करें और WhatsApp भेजें</button>
+</div>
+
+<footer>
+    © 2026 MP-MH Eeco Booking
+</footer>
+
+<script>
+// 1. Firebase कॉन्फ़िगरेशन
+const firebaseConfig = {
+    databaseURL: "https://mp-mh-eeco-booking-8dafc-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+const toLocation = document.getElementById("to-location");
+const seatsCount = document.getElementById("seats-count");
+const fareDisplay = document.getElementById("fare");
+
+const fareMap = {
+    Shirpur: 100, Dhule: 150, Jalgaon: 250, Chalisgaon: 300, 
+    Kannad: 400, Aurangabad: 450, Lasur: 500, Gangapur: 520, 
+    Vaijapur: 480, Alephata: 600, Yevla: 550, Malegaon: 350
+};
+
+function updateFare() {
+    const destination = toLocation.value;
+    const seats = parseInt(seatsCount.value) || 1;
+    const baseFare = fareMap[destination] || 0;
+    
+    fareDisplay.textContent = baseFare * seats;
+}
+
+toLocation.addEventListener("change", updateFare);
+seatsCount.addEventListener("input", updateFare);
+
+function sendBooking() {
+    const name = document.getElementById('cust-name').value.trim();
+    const phone = document.getElementById('cust-phone').value.trim();
+    const from = document.getElementById('from-location').value;
+    const to = document.getElementById('to-location').value;
+    const date = document.getElementById('travel-date').value;
+    const seats = document.getElementById('seats-count').value;
+    const totalFare = fareDisplay.textContent;
+
+    if (!name || !phone || !from || !to || !date || !seats) {
+        alert("कृपया बुकिंग करने से पहले सभी जानकारी सही-सही भरें!");
+        return;
+    }
+
+    if (phone.length < 10) {
+        alert("कृपया एक वैध 10 अंकों का मोबाइल नंबर दर्ज करें!");
+        return;
+    }
+
+    // Firebase में डेटा सेव करना
+    const bookingRef = database.ref('bookings').push();
+    bookingRef.set({
+        name: name,
+        phone: phone,
+        from_location: from,
+        to_location: to,
+        travel_date: date,
+        seats: seats,
+        fare: totalFare,
+        timestamp: new Date().toISOString()
+    }, function(error) {
+        if (error) {
+            console.error("Firebase Error: ", error);
+        }
+
+        // एरर-फ्री व्हाट्सएप लिंक (यह ब्राउज़र को हैंग या एरर नहीं देगा)
+        const msg = `🚐 *नई ईको बुकिंग आई है!* 🚐\n\n` +
+                    `👤 *यात्री का नाम:* ${name}\n` +
+                    `📱 *मोबाइल नंबर:* ${phone}\n` +
+                    `📍 *कहाँ से:* ${from}\n` +
+                    `🎯 *कहाँ जाना है:* ${to}\n` +
+                    `📅 *तारीख:* ${date}\n` +
+                    `💺 *सीटें:* ${seats}\n` +
+                    `💵 *कुल किराया:* ₹${totalFare}`;
+
+        // नया लिंक जो हर फोन और ऐप में काम करेगा
+        const whatsappUrl = "https://api.whatsapp.com/send?phone=918208445425&text=" + encodeURIComponent(msg);
+        
+        // सीधे इसी पेज पर व्हाट्सएप खोलें
+        window.location.href = whatsappUrl;
+    });
+}
+</script>
+</body>
+</html>

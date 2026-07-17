@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eeco Booking - Driver Panel</title>
+
+<!-- Firebase SDK Scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e5e9f0;
+}
+
+header {
+    background: #28a745;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.container {
+    max-width: 500px;
+    margin: 15px auto;
+    padding: 10px;
+}
+
+/* लॉगिन और रजिस्ट्रेशन स्क्रीन */
+.auth-box {
+    max-width: 380px;
+    margin: 20px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.auth-box input, .auth-box select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 15px;
+}
+
+.auth-box button {
+    width: 100%;
+    padding: 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.auth-link {
+    margin-top: 15px;
+    display: inline-block;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Captcha Area Styling */
+.captcha-container {
+    background: #f1f3f5;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    border: 1px solid #ced4da;
+}
+
+.captcha-code {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 6px;
+    background: linear-gradient(45deg, #333, #666);
+    color: white;
+    padding: 5px 18px;
+    border-radius: 4px;
+    user-select: none;
+    text-decoration: line-through;
+    font-style: italic;
+}
+
+.refresh-captcha {
+    background: none;
+    border: none;
+    color: #007bff;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* Image Upload Styling */
+.photo-upload-container {
+    margin: 10px 0;
+    text-align: left;
+}
+
+.photo-upload-label {
+    display: block;
+    font-size: 14px;
+    color: #495057;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.photo-upload-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px dashed #28a745;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    color: #28a745;
+    font-weight: bold;
+    box-sizing: border-box;
+}
+
+.photo-preview {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: none;
+    border: 1px solid #ddd;
+}
+
+/* मुख्य ड्राइवर पैनल */
+#driver-dashboard {
+    display: none;
+}
+
+.status-box, .welcome-box {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 15px;
+}
+
+input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.booking-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 12px;
+    border-left: 5px solid #28a745;
+}
+
+.booking-card h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.info-row {
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-call { background: #007bff; color: white; border: none; }
+.btn-status { background: #ffc107; color: #333; border: none; }
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+.status-pending { background: #ffc107; color: black; }
+.status-completed { background: #28a745; }
+</style>
+</head>
+
+<body>
+
+<!-- 1. लॉगिन स्क्रीन -->
+<div id="login-screen" class="auth-box">
+    <h2 style="margin-bottom: 10px; color:#28a745;">🚖 Driver Login</h2>
+    <p style="color: #666; font-size: 14px;">लॉगिन आईडी और पासवर्ड दर्ज करें</p>
+    <input type="text" id="driver-id" placeholder="लॉगिन ID">
+    <input type="password" id="driver-password" placeholder="पासवर्ड">
+    <button onclick="loginDriver()">लॉगिन करें</button>
+    <span class="auth-link" onclick="openRegisterScreen()">🆕 नया ड्राइवर रजिस्टर करें</span>
+</div>
+
+<!-- 2. रजिस्ट्रेशन स्क्रीन -->
+<div id="register-screen" class="auth-box" style="display: none;">
+    <h2 style="margin-bottom: 10px; color:#007bff;">📝 Driver Registration</h2>
+    <p style="color: #666; font-size: 14px;">अपनी जानकारी भरकर रिक्वेस्ट भेजें</p>
+    
+    <input type="text" id="reg-name" placeholder="ड्राइवर का नाम (Username)">
+    <input type="text" id="reg-phone" placeholder="10-अंकीय मोबाइल नंबर" maxlength="10">
+    <input type="text" id="reg-vehicle" placeholder="गाड़ी नंबर (उदा: MH 12 AB 1234)">
+    
+    <!-- 📸 कैमरा / गैलरी से गाड़ी की फ़ोटो अपलोड करने का विकल्प -->
+    <div class="photo-upload-container">
+        <label class="photo-upload-label">📸 गाड़ी की फोटो अपलोड करें (कैमरा या गैलरी):</label>
+        <label for="reg-photo-file" class="photo-upload-btn">📁 फोटो चुनें / कैमरा खोलें</label>
+        <input type="file" id="reg-photo-file" accept="image/*" style="display: none;" onchange="previewAndProcessImage(event)">
+        <img id="photo-preview-img" class="photo-preview" src="#" alt="गाड़ी का फोटो प्रिव्यू">
+    </div>
+
+    <input type="text" id="reg-id" placeholder="लॉगिन ID बनाएं (Unique)">
+    <input type="password" id="reg-password" placeholder="एक मजबूत पासवर्ड बनाएं">
+
+    <!-- 🧩 कैप्चा कोड सेक्शन (OTP की जगह) -->
+    <div style="text-align: left; margin-top: 10px;">
+        <label style="font-size: 14px; font-weight: bold; color: #495057;">🧩 सुरक्षा कैप्चा कोड (अंक) दर्ज करें:</label>
+    </div>
+    <div class="captcha-container">
+        <span class="captcha-code" id="captcha-display">------</span>
+        <button class="refresh-captcha" onclick="generateCaptcha()" title="नया कैप्चा लोड करें">🔄</button>
+    </div>
+    <input type="number" id="reg-captcha-input" placeholder="ऊपर दिया गया नंबर कोड यहाँ लिखें" style="text-align: center; font-weight: bold;">
+
+    <button onclick="registerDriver()" style="background:#28a745; margin-top: 15px;">📝 रजिस्टर करें</button>
+
+    <span class="auth-link" onclick="toggleAuthScreens('login-screen', 'register-screen')" style="color:#dc3545;">🔙 वापस लॉगिन स्क्रीन पर जाएं</span>
+</div>
+
+<!-- 3. मुख्य ड्राइवर डैशबोर्ड -->
+<div id="driver-dashboard">
+    <header>
+        <h1 id="header-title">🚖 ड्राइवर पैनल</h1>
+        <p id="header-vehicle">गाड़ी नंबर: --</p>
+        <p id="header-points" style="margin: 5px 0 0 0; font-size: 14px; color: #ffeb3b; font-weight: bold;">⭐ पॉइंट्स: 0</p>
+    </header>
+
+    <div class="container">
+        <!-- ड्राइवर प्रोफाइल -->
+        <div class="welcome-box" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin:0; color:#28a745;">स्वागत है, <span id="welcome-name">ड्राइवर</span>!</h3>
+            </div>
+            <button onclick="logoutDriver()" style="background:#dc3545; color:white; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">लॉगआउट 🔓</button>
+        </div>
+
+        <!-- ड्राइवर खाली सीट कंट्रोल -->
+        <div class="status-box">
+            <h4 style="margin: 0 0 10px 0;">💺 अपनी खाली सीटें अपडेट करें</h4>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" id="driver-empty-seats" placeholder="खाली सीटों की संख्या" min="0" max="10">
+                <button onclick="updateDriverSeats()" style="padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; min-width: 100px;">अपडेट करें</button>
+            </div>
+        </div>
+
+        <!-- ड्यूटी लिस्ट -->
+        <h3 style="margin-left: 5px; color: #4a5568;">📋 आपकी बुकिंग ड्यूटी</h3>
+        <div id="jobs-container">
+            <p style="text-align:center; color:#666;">लोड हो रहा है...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Firebase कॉन्फ़िगरेशन
+const firebaseConfig = {
+    databaseURL: "https://mp-mh-eeco-booking-8dafc-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+let loggedInDriverId = "";
+let driverData = {};
+let generatedCaptchaCode = "";
+let base64PhotoData = "https://img.icons8.com/color/96/car--v1.png"; // डिफ़ॉल्ट इमेज
+
+function toggleAuthScreens(showId, hideId) {
+    document.getElementById(hideId).style.display = 'none';
+    document.getElementById(showId).style.display = 'block';
+}
+
+function openRegisterScreen() {
+    toggleAuthScreens('register-screen', 'login-screen');
+    generateCaptcha();
+    // फॉर्म रीसेट करें
+    document.getElementById('photo-preview-img').style.display = 'none';
+    base64PhotoData = "https://img.icons8.com/color/96/car--v1.png";
+}
+
+// 🧩 1. रैंडम 6-अंकीय सिर्फ संख्याओं वाला कैप्चा जनरेट करना
+function generateCaptcha() {
+    const chars = "0123456789"; // सिर्फ नंबर्स
+    let captcha = "";
+    for (let i = 0; i < 6; i++) {
+        captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    generatedCaptchaCode = captcha;
+    document.getElementById('captcha-display').textContent = captcha;
+    document.getElementById('reg-captcha-input').value = "";
+}
+
+// 📸 2. कैमरा या गैलरी से फ़ोटो चुनना और प्रिव्यू दिखाना
+function previewAndProcessImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('photo-preview-img');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            
+            // इमेज को Base64 में कनवर्ट किया ताकि डेटाबेस में सुरक्षित सेव हो सके
+            base64PhotoData = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// 📝 3. कैप्चा कोड मैच करके सीधे रजिस्टर करना
+function registerDriver() {
+    const name = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const vehicle = document.getElementById('reg-vehicle').value.trim();
+    const id = document.getElementById('reg-id').value.trim();
+    const password = document.getElementById('reg-password').value.trim();
+    const enteredCaptcha = document.getElementById('reg-captcha-input').value.trim();
+
+    if (!name || !phone || !vehicle || !id || !password || !enteredCaptcha) {
+        alert("कृपया रजिस्ट्रेशन फॉर्म की सभी जानकारी भरें और कैप्चा कोड दर्ज करें!");
+        return;
+    }
+
+    if (phone.length !== 10 || isNaN(phone)) {
+        alert("कृपया एक वैध 10-अंकीय मोबाइल नंबर दर्ज करें!");
+        return;
+    }
+
+    // कैप्चा कोड का वेरिफिकेशन
+    if (enteredCaptcha !== generatedCaptchaCode) {
+        alert("❌ गलत कैप्चा कोड! कृपया स्क्रीन पर दिखने वाला सही कोड लिखें।");
+        generateCaptcha(); // रीसेट कैप्चा
+        return;
+    }
+
+    database.ref('drivers/' + id).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+            alert("यह लॉगिन ID पहले से ली जा चुकी है! कृपया कोई दूसरी ID चुनें।");
+        } else {
+            // डायरेक्ट डेटाबेस में सेव करना (OTP की कोई जरूरत नहीं)
+            database.ref('drivers/' + id).set({
+                name: name,
+                phone: phone,
+                vehicle: vehicle,
+                photo: base64PhotoData,
+                password: password,
+                points: 100, // डिफ़ॉल्ट पॉइंट्स
+                status: "pending" 
+            }).then(() => {
+                alert("🎉 रजिस्ट्रेशन सफल रहा!\n\nकृपया एडमिन द्वारा अकाउंट मंजूर (Approve) किए जाने का इंतजार करें।");
+                
+                toggleAuthScreens('login-screen', 'register-screen');
+                
+                // फॉर्म को साफ़ करना
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-phone').value = '';
+                document.getElementById('reg-vehicle').value = '';
+                document.getElementById('reg-id').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-captcha-input').value = '';
+                document.getElementById('reg-photo-file').value = '';
+                document.getElementById('photo-preview-img').style.display = 'none';
+                base64PhotoData = "https://img.icons8.com/color/96/car--v1.png";
+            });
+        }
+    });
+}
+
+// ड्राइवर लॉगिन प्रक्रिया
+function loginDriver() {
+    const id = document.getElementById('driver-id').value.trim();
+    const password = document.getElementById('driver-password').value.trim();
+
+    if (!id || !password) {
+        alert("कृपया आईडी और पासवर्ड दोनों दर्ज करें!");
+        return;
+    }
+
+    database.ref('drivers/' + id).once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.password === password) {
+            if (data.status === 'pending') {
+                alert("🔒 आपका अकाउंट अभी तक एडमिन द्वारा अप्रूव नहीं किया गया है। कृपया एडमिन से संपर्क करें।");
+                return;
+            }
+            
+            loggedInDriverId = id;
+            driverData = data;
+            showDashboard();
+        } else {
+            alert("गलत आईडी या पासवर्ड! कृपया दोबारा जाँचें।");
+        }
+    });
+}
+
+function showDashboard() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('driver-dashboard').style.display = 'block';
+
+    document.getElementById('welcome-name').textContent = driverData.name;
+    document.getElementById('header-title').textContent = "🚖 " + driverData.name;
+    document.getElementById('header-vehicle').textContent = "गाड़ी नंबर: " + driverData.vehicle;
+    document.getElementById('header-points').textContent = "⭐ पॉइंट्स: " + (driverData.points !== undefined ? driverData.points : 100);
+
+    database.ref('driver_seats/' + loggedInDriverId).once('value', (snap) => {
+        document.getElementById('driver-empty-seats').value = snap.val() !== null ? snap.val() : 0;
+    });
+
+    loadDriverJobs();
+}
+
+function logoutDriver() {
+    loggedInDriverId = "";
+    driverData = {};
+    document.getElementById('driver-id').value = '';
+    document.getElementById('driver-password').value = '';
+    document.getElementById('driver-dashboard').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'block';
+}
+
+function updateDriverSeats() {
+    const seats = document.getElementById('driver-empty-seats').value;
+    if (seats === "") {
+        alert("कृपया सही संख्या दर्ज करें!");
+        return;
+    }
+    database.ref('driver_seats/' + loggedInDriverId).set(parseInt(seats))
+    .then(() => {
+        alert("आपकी खाली सीटें सफलतापूर्वक " + seats + " अपडेट हो गई हैं!");
+    });
+}
+
+function loadDriverJobs() {
+    const jobsContainer = document.getElementById('jobs-container');
+
+    database.ref('bookings').on('value', (snapshot) => {
+        jobsContainer.innerHTML = '';
+        const data = snapshot.val();
+        let jobsFound = 0;
+
+        if (data) {
+            Object.keys(data).reverse().forEach((key) => {
+                const booking = data[key];
+                
+                if (booking.driverId === loggedInDriverId) {
+                    jobsFound++;
+                    const statusText = booking.status === 'completed' ? 'यात्रा पूरी' : 'पेंडिंग';
+                    const statusClass = booking.status === 'completed' ? 'status-completed' : 'status-pending';
+
+                    const card = `
+                        <div class="booking-card" style="border-left-color: ${booking.status === 'completed' ? '#6c757d' : '#28a745'}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>👤 ${booking.name}</h3>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="info-row">📍 <b>कहाँ से:</b> ${booking.from_location}</div>
+                            <div class="info-row">🎯 <b>जाना है:</b> ${booking.to_location}</div>
+                            <div class="info-row">📅 <b>तारीख:</b> ${booking.travel_date}</div>
+                            <div class="info-row">💺 <b>सीटें:</b> ${booking.seats} seat</div>
+                            <div class="info-row">💵 <b>किराया:</b> ₹${booking.fare}</div>
+                            
+                            <div class="btn-group">
+                                <a href="tel:${booking.phone}" class="btn btn-call">📞 कॉल</a>
+                                <button onclick="toggleJobStatus('${key}', '${booking.status}')" class="btn btn-status">
+                                    ${booking.status === 'completed' ? '🔄 पेंडिंग करें' : '✅ यात्रा पूरी हुई'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    jobsContainer.innerHTML += card;
+                }
+            });
+        }
+
+        if (jobsFound === 0) {
+            jobsContainer.innerHTML = '<p style="text-align:center; color:green; font-weight:bold; margin-top:20px;">🎉 आपकी कोई booking ड्यूटी नहीं है!</p>';
+        }
+    });
+}
+
+function toggleJobStatus(bookingId, currentStatus) {
+    const nextStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+    database.ref('bookings/' + bookingId).update({
+        status: nextStatus
+    }).then(() => {
+        alert("बुकिंग स्टेटस अपडेट हो गया है!");
+    });
+}
+</script>
+</body>
+</html>
